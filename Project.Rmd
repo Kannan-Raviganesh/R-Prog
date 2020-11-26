@@ -1,6 +1,6 @@
 ---
 title: "Prediction Of Liver Disease using ML Algorithms"
-author: "Kannan (1948019)"
+author: "Kannan"
 date: "04/03/2020"
 output:
   word_document: default
@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 Introduction:
 In this fast growing world, we see various changes in day-to-day life. The Population of the world is drastically increasing. India being one of the most densely populated country, we see many new health issues coming up. One such health issue is "The Liver Disease". Through our Analysis and Interpretation, we would be trying to predict/classify a person if he is suffering from a liver disease or not.
 ```{r}
-liv=read.csv("C:/Users/kanna/Downloads/indian-liver-patient-records/indian_liver_patient.csv")
+liv=read.csv(file.choose())
 head(liv)
 tail(liv)
 ```
@@ -140,7 +140,7 @@ accuracy_Test <- sum(diag(table_mat)) / sum(table_mat)
 print(paste('Accuracy for test', accuracy_Test))
 ```
 Interpretation:
-From the Decision Tree, We infer that all the samples in the test dataset haven't been correctly classified and we’ve attained an accuracy of just 66.38% on the test data set which is very very minimal. Thus we infer that, we cannot correctly predict whether the person is suffering from a liver disease or not from our Decision Tree Model.
+From the Decision Tree, We infer that all the samples in the test dataset haven't been correctly classified and weâ€™ve attained an accuracy of just 66.38% on the test data set which is very very minimal. Thus we infer that, we cannot correctly predict whether the person is suffering from a liver disease or not from our Decision Tree Model.
                 
 ```{r}
 #Tuning the Model to Boost the Accuracy
