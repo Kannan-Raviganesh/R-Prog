@@ -1,0 +1,164 @@
+---
+title: "Prediction Of Liver Disease using ML Algorithms"
+author: "Kannan (1948019)"
+date: "04/03/2020"
+output:
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Introduction:
+In this fast growing world, we see various changes in day-to-day life. The Population of the world is drastically increasing. India being one of the most densely populated country, we see many new health issues coming up. One such health issue is "The Liver Disease". Through our Analysis and Interpretation, we would be trying to predict/classify a person if he is suffering from a liver disease or not.
+```{r}
+liv=read.csv("C:/Users/kanna/Downloads/indian-liver-patient-records/indian_liver_patient.csv")
+head(liv)
+tail(liv)
+```
+Dataset:
+This data set contains 416 liver patient records and 167 non liver patient records and 11 features (classes) collected from North East of Andhra Pradesh, India. The "Dataset" column is a class label used to divide groups into liver patient (liver disease) or not (no disease). This data set contains 441 male patient records and 142 female patient records.Any patient whose age exceeded 89 is listed as being of age "90". 
+              
+```{r}
+library(Amelia)
+missmap(liv, col=c("blue", "red"), legend=FALSE)
+liver=na.omit(liv)
+```
+Interpretation:
+From the above plot it is infered that there are four missing values in the dataset and it is treated by omitting the rows that contains missing values as the number of missing values in this dataset doesn't impact a lot while building suitable models.
+
+```{r}
+summary(liver)
+
+```
+Interpretation:
+The above is the summary of the model. There are two categorical variables. One is Age and the other is the target variable where 1 denotes presence of liver disease and 2 represents absence of liver disease.
+
+```{r}
+hist(liver$Age,main="histogram of age",xlab="sex",ylab="count",col='red')
+
+```
+Interpretation:
+The above histogram tells that most of the age category of the patients fall under 40-50 and the lowest being above 80 . This indicates that there are more people affected by liver disease in the age category of 40-50 compared to other categories. And also the age data follows normal distribution therfore mean=median(approximately).
+
+```{r}
+gender=table(liver$Gender)
+barplot(gender,main="Barplot of Gender",xlab = "Gender",ylab="count",col="skyblue")
+
+
+```
+Interpretation:
+The above barplot explains that most of the data records in this dataset belongs to male with male count being 439 and female count being 140.
+
+```{r}
+target=table(liver$Dataset)
+target
+barplot(target,main="Barplot of Target variable",xlab="Target Variable",ylab="Count",legend=c("Disease","No Disease"),col=c("powderblue","plum"),ylim = c(0,500))
+
+```
+Interpretation:
+From the above barplot it is inferred that more than 400 people are affected by liver disease out of 579 people . 
+
+```{r}
+library(corrplot)
+liver[,2]= sapply(liver[,2],switch,"Male"=1,"Female"=2)
+cor=cor(liver)
+corrplot(cor,method="number")
+
+```
+Interpretation:
+The above is the correlation matrix of the dataset and it is evident that none of the features are highly correlated with the target variable with highest being Direct_Bilirubin at 0.25.
+
+```{r}
+liver[,11]= sapply(liver[,11],switch,"1"=1,"2"=0)
+boxplot(liver)
+```
+Interpretation:
+The above boxplot indicates that there are more number of outliers in the dataset especially in the features Alkaline_Phosphotase,Alamaine Aminotransferse,Aspartate Aminotransferase .Outliers are not removed in this because a large portion of the dataset are outliers and treatment of this will impact in the model. Influence of outliers are checked after building the model, if found influencing then it will be treated.
+                  
+```{r}
+pairs(liver, col=liver$Dataset)
+
+```
+Interpretation:
+The above is scatterplotmatrix of the dataset and it is evident that most of the features are not associated with the target variable.
+
+```{r}
+glm.fit <- glm(liver$Dataset ~ liver$Direct_Bilirubin + liver$Total_Bilirubin +liver$Alkaline_Phosphotase +liver$Alamine_Aminotransferase +liver$Aspartate_Aminotransferase, family = binomial)
+summary(glm.fit)
+plot(glm.fit)
+
+```
+Interpretation:
+A logistic regression is build for the above model and from the Z values and p-values it is evident that none of the coefficients are sigificant here.The AIC value indicates that it is an average model not the best one.From the residual vs fiited plot the points don't form a staright line theredore not a good model and in normal Q-Q plot it is infered that the data doesn't folllow normal distribution, and scale location plot indicates that the points are not evnly scattared therefore not a gpod model and the cook's distance indicates that there is outlier influence in this model.
+
+```{r}
+ library(ROCR)
+predictions= predict(glm.fit, type='response')
+ROCRpred= prediction(predictions, liver$Dataset)
+ROCRperf= performance(ROCRpred, measure ="tpr", x.measure ="fpr")
+plot(ROCRperf, colorize = TRUE, text.adj = c(-0.2,1.7), print.cutoffs.at = seq(0,1,0.1))
+
+```
+Interpretation:
+The above ROC curve indicates that the logistic model built is not a good model as the curve is not close to 1. Therefore the accuracy of the model will be very less implying that the target variable can't be predicted accurately. Therefore other techniques are used to increase the accuracy . 
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+sample1 <- sample(2, nrow(liver),
+                     replace = T,
+                     prob = c(0.6,0.4))
+
+train <- liver[sample1==1,]
+test <- liver[sample1==2,]
+
+```
+Interpretation:
+We now split the data into training and testing data inorder to apply Decision Tree Algorithm.
+```{r}
+library(rpart)
+library(rpart.plot)
+fit <- rpart(Dataset~., data = train, method = 'class')
+rpart.plot(fit, extra = 106)
+```
+
+```{r}
+predict_unseen <-predict(fit, test, type = 'class')
+```
+
+```{r}
+table_mat <- table(test$Dataset, predict_unseen)
+table_mat
+```
+```{r}
+accuracy_Test <- sum(diag(table_mat)) / sum(table_mat)
+```
+
+```{r}
+print(paste('Accuracy for test', accuracy_Test))
+```
+Interpretation:
+From the Decision Tree, We infer that all the samples in the test dataset haven't been correctly classified and we’ve attained an accuracy of just 66.38% on the test data set which is very very minimal. Thus we infer that, we cannot correctly predict whether the person is suffering from a liver disease or not from our Decision Tree Model.
+                
+```{r}
+#Tuning the Model to Boost the Accuracy
+accuracy_tune <- function(fit) {
+    predict_unseen <- predict(fit, test, type = 'class')
+    table_mat <- table(test$Dataset, predict_unseen)
+    accuracy_Test <- sum(diag(table_mat)) / sum(table_mat)
+    accuracy_Test
+}
+```
+
+```{r}
+control <- rpart.control(minsplit = 4,
+    minbucket = round(5 / 3),
+    maxdepth = 3,
+    cp = 0)
+tune_fit <- rpart(Dataset~., data = train, method = 'class', control = control)
+print(paste('Accuracy after Tuning', accuracy_tune(tune_fit)))
+```
+Interpretation:
+After tuning the Decision Tree, We have obtained an increased level of Accuracy which is 72.26%. Even though there is a rise in the accuracy level, we cannot consider it to be a good model as it has only 72% chance to predict the right outcome. We cannot considerr a model to be a Good model unless and until it shows a minimum accuracy of 95%. If we predict it wrongly, the patient's situation might get worse or may even end up to be life taking.
